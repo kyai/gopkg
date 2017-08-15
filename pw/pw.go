@@ -1,4 +1,4 @@
-package gopw
+package pw
 
 import (
 	"errors"
