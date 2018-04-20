@@ -1,4 +1,4 @@
-package goicon
+package icon
 
 import (
 	"errors"
