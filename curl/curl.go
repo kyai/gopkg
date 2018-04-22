@@ -3,21 +3,20 @@ package curl
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 )
 
-func Do(method, url string, data map[string]interface{}, obj interface{}) {
+func Do(method, url string, data map[string]interface{}, obj interface{}) error {
 
 	jsonS, err := json.Marshal(data)
 	if err != nil {
-		fmt.Println(err.Error())
+		return err
 	}
 	reader := bytes.NewReader(jsonS)
 	request, err := http.NewRequest(method, url, reader)
 	if err != nil {
-		fmt.Println(err.Error())
+		return err
 	}
 
 	request.Header.Set("Content-Type", "application/json")
@@ -26,17 +25,19 @@ func Do(method, url string, data map[string]interface{}, obj interface{}) {
 
 	resp, err := httpC.Do(request)
 	if err != nil {
-		fmt.Println(err.Error())
+		return err
 	}
 
 	rdata, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println(err.Error())
+		return err
 	}
 
 	if err = json.Unmarshal(rdata, obj); err != nil {
-		fmt.Println(err.Error())
+		return err
 	}
+
+	return nil
 }
 
 func Get(url string, data map[string]interface{}, obj interface{}) {
