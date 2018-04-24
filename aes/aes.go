@@ -47,6 +47,16 @@ func DeToken(s string) string {
 	return string(result)
 }
 
+func Encrypt(s string) (string, error) {
+	ss, err := AesEncrypt([]byte(s), []byte(Key))
+	return string(ss), err
+}
+
+func Decrypt(s string) (string, error) {
+	ss, err := AesDecrypt([]byte(s), []byte(Key))
+	return string(ss), err
+}
+
 func AesEncrypt(origData, key []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
