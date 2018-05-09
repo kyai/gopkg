@@ -2,7 +2,7 @@ package proc
 
 import (
 	"fmt"
-	"gopkg/file"
+	"io/ioutil"
 	"os"
 	"os/signal"
 	"syscall"
@@ -24,9 +24,9 @@ func init() {
 }
 
 func start() {
-	file.Writer("./"+FileName, fmt.Sprintf("%d", os.Getpid()))
+	ioutil.WriteFile("./"+FileName, []byte(fmt.Sprintf("%d", os.Getpid())), 0666)
 }
 
 func stop() {
-	file.Remove("./" + FileName)
+	os.Remove("./" + FileName)
 }
