@@ -3,6 +3,7 @@ package curl
 import (
 	"bytes"
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"io/ioutil"
 	"net/http"
@@ -48,10 +49,18 @@ func Do(method, url string, data map[string]interface{}, header map[string]strin
 		return
 	}
 
-	if header["Content-Type"] == "application/json" {
+	ctype := strings.ToLower(header["Content-Type"])
+
+	if ctype == "application/json" {
 		if err = json.Unmarshal(rdata, &respData); err != nil {
 			return
 		}
+	} else if ctype == "application/xml" || ctype == "text/xml" {
+		if err = xml.Unmarshal(rdata, &respData); err != nil {
+			return
+		}
+	} else {
+		respData = string(rdata)
 	}
 
 	return
