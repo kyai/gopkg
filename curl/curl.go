@@ -5,71 +5,150 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"errors"
+	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
-func Do(method, url string, data map[string]interface{}, header map[string]string) (respData interface{}, err error) {
+type curl struct {
+	url    string
+	data   interface{}
+	body   BodyType
+	param  map[string]string
+	method string
+	header map[string]string
+	cookie map[string]string
+}
 
-	if method == "" {
-		err = errors.New("No method")
-		return
-	}
-	method = strings.ToUpper(method)
+type Response *http.Response
 
-	if header == nil {
-		header = make(map[string]string)
-		header["Content-Type"] = "application/json"
-	}
+type BodyType int
 
-	jsonS, err := json.Marshal(data)
-	if err != nil {
-		return
-	}
-	reader := bytes.NewReader(jsonS)
-	request, err := http.NewRequest(method, url, reader)
-	if err != nil {
-		return
-	}
+const (
+	_ BodyType = iota
+	TEXT
+	FORM
+	JSON
+	XML
+)
 
-	for k, v := range header {
-		request.Header.Set(k, v)
-	}
+// New request
+func New(method, url string) *curl {
+	return &curl{url: url, method: method}
+}
 
-	httpC := http.Client{}
-
-	resp, err := httpC.Do(request)
-	if err != nil {
-		return
-	}
-
-	rdata, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return
-	}
-
-	ctype := strings.ToLower(header["Content-Type"])
-
-	if ctype == "application/json" {
-		if err = json.Unmarshal(rdata, &respData); err != nil {
-			return
-		}
-	} else if ctype == "application/xml" || ctype == "text/xml" {
-		if err = xml.Unmarshal(rdata, &respData); err != nil {
-			return
-		}
+// Set data and the type, default is JSON
+func (this *curl) Data(data interface{}, body ...BodyType) *curl {
+	this.data = data
+	if len(body) > 0 {
+		this.body = body[0]
 	} else {
-		respData = string(rdata)
+		this.body = JSON
+	}
+	return this
+}
+
+// Set params
+func (this *curl) Param(param map[string]string) *curl {
+	this.param = param
+	return this
+}
+
+// Set headers
+func (this *curl) Header(header map[string]string) *curl {
+	this.header = header
+	return this
+}
+
+// Set cookies
+func (this *curl) Cookie(cookie map[string]string) *curl {
+	this.cookie = cookie
+	return this
+}
+
+// Combined urls and parameters
+func (this *curl) urlWithParam() (err error) {
+	if this.param == nil {
+		return
+	}
+
+	var u *url.URL
+	if u, err = url.Parse(this.url); err != nil {
+		return
+	}
+
+	q := u.Query()
+	for k, v := range this.param {
+		q.Set(k, v)
+	}
+
+	u.RawQuery = q.Encode()
+	this.url = u.String()
+
+	return
+}
+
+func (this *curl) request() (response Response, err error) {
+	if this.url == "" {
+		return nil, errors.New("No url")
+	} else {
+		if err = this.urlWithParam(); err != nil {
+			return
+		}
+	}
+	if this.method == "" {
+		return nil, errors.New("No method")
+	} else {
+		this.method = strings.ToUpper(this.method)
+	}
+
+	var payload io.Reader
+
+	if this.data != nil && this.method != "GET" {
+		switch this.body {
+		case TEXT:
+			payload = bytes.NewReader([]byte(this.data.(string)))
+		case JSON:
+			if jdata, err := json.Marshal(this.data); err != nil {
+				return nil, err
+			} else {
+				payload = bytes.NewReader(jdata)
+			}
+		case XML:
+			if xdata, err := xml.Marshal(this.data); err != nil {
+				return nil, err
+			} else {
+				payload = bytes.NewReader(xdata)
+			}
+		}
+	}
+
+	request, err := http.NewRequest(this.method, this.url, payload)
+	if err != nil {
+		return
+	}
+
+	httpClient := http.Client{}
+
+	response, err = httpClient.Do(request)
+	if err != nil {
+		return
 	}
 
 	return
 }
 
-func Get(url string, data map[string]interface{}, header map[string]string) (respData interface{}, err error) {
-	return Do("Get", url, data, header)
-}
-
-func Post(url string, data map[string]interface{}, header map[string]string) (respData interface{}, err error) {
-	return Do("Post", url, data, header)
+func (this *curl) Do() (body []byte, header http.Header, err error) {
+	var resp Response
+	if resp, err = this.request(); err != nil {
+		return
+	}
+	header = resp.Header
+	body, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return
+	}
+	return
 }
