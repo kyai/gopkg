@@ -130,6 +130,12 @@ func (this *curl) request() (response Response, err error) {
 		return
 	}
 
+	if this.header != nil {
+		for k, v := range this.header {
+			request.Header.Set(k, v)
+		}
+	}
+
 	httpClient := http.Client{}
 
 	response, err = httpClient.Do(request)
