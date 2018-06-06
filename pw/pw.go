@@ -68,11 +68,10 @@ func Create(args ...interface{}) (string, error) {
 	return pwd, err
 }
 
-func CreatePwd(l int, s string) string {
-	p := ""
+func CreatePwd(l int, s string) (pwd string) {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := 0; i < l; i++ {
-		p += string([]byte(s)[r.Intn(len(s))])
+		pwd += string([]byte(s)[r.Intn(len(s))])
 	}
-	return p
+	return
 }
