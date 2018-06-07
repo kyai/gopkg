@@ -13,7 +13,7 @@ func RowsScan(rows *sql.Rows) (result []map[string]string, err error) {
 
 	values := make([]sql.RawBytes, len(columns))
 	scanArgs := make([]interface{}, len(values))
-	ret := make(map[string]string, len(scanArgs))
+	// ret := make(map[string]string, len(scanArgs))
 
 	for i := range values {
 		scanArgs[i] = &values[i]
@@ -26,6 +26,7 @@ func RowsScan(rows *sql.Rows) (result []map[string]string, err error) {
 		}
 
 		var value string
+		ret := make(map[string]string, len(scanArgs))
 
 		for i, col := range values {
 			if col == nil {
