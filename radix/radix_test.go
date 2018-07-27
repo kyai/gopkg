@@ -6,6 +6,9 @@ import (
 )
 
 func TestRadix(t *testing.T) {
-	result, _ := Convert("f", 16, 10)
+	result, err := Convert("1", 2, 10)
+	if err != nil {
+		fmt.Println("error: ", err)
+	}
 	fmt.Println("result: ", result)
 }

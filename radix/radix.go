@@ -21,9 +21,27 @@ func Convert(num interface{}, currentRadix, targetRadix int) (result string, err
 		return "", errors.New("No support type")
 	}
 
+	if currentRadix <= 36 {
+		numStr = strings.ToLower(numStr)
+	}
+
+	if !check(numStr, currentRadix) {
+		return "", errors.New("current radix is error")
+	}
+
 	ten := enten(numStr, currentRadix)
 	result = deten(ten, targetRadix)
 	return
+}
+
+func check(num string, r int) bool {
+	s := char[:r]
+	for _, v := range num {
+		if strings.IndexRune(s, v) < 0 {
+			return false
+		}
+	}
+	return true
 }
 
 // N to 10
