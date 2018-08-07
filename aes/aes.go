@@ -9,52 +9,36 @@ import (
 	"strings"
 )
 
-// AES-128。key长度：16, 24, 32 bytes 对应 AES-128, AES-192, AES-256
-const Key = "6666666666666666"
+// length(bytes)	type
+// 16				128
+// 24				192
+// 32				256
+var key []byte
 
-func EnToken(s string) string {
-	result, err := AesEncrypt([]byte(s), []byte(Key))
-	if err != nil {
-		// panic(err)
-		return ""
-	}
-
-	ss := base64.StdEncoding.EncodeToString(result)
-
-	ss = strings.Replace(ss, "/", "_a", -1)
-	ss = strings.Replace(ss, "+", "_b", -1)
-	ss = strings.Replace(ss, "=", "_c", -1)
-
-	return ss
+func SetKey(s string) {
+	key = []byte(s)
 }
 
-func DeToken(s string) string {
-	s = strings.Replace(s, "_a", "/", -1)
-	s = strings.Replace(s, "_b", "+", -1)
-	s = strings.Replace(s, "_c", "=", -1)
-
-	ss, err := base64.StdEncoding.DecodeString(s)
+func Encrypt(s string) (result string, err error) {
+	var ss []byte
+	ss, err = AesEncrypt([]byte(s), key)
 	if err != nil {
-		return ""
+		return
 	}
-
-	result, err := AesDecrypt(ss, []byte(Key))
-	if err != nil {
-		// panic(err)
-		return ""
-	}
-
-	return string(result)
+	result = base64.StdEncoding.EncodeToString(ss)
+	return
 }
 
-func Encrypt(s string) (string, error) {
-	ss, err := AesEncrypt([]byte(s), []byte(Key))
-	return string(ss), err
-}
-
-func Decrypt(s string) (string, error) {
-	ss, err := AesDecrypt([]byte(s), []byte(Key))
-	return string(ss), err
+func Decrypt(s string) (result string, err error) {
+	var ss []byte
+	if ss, err = base64.StdEncoding.DecodeString(s); err != nil {
+		return
+	}
+	if ss, err = AesDecrypt(ss, key); err != nil {
+		return
+	}
+	result = string(ss)
+	return
 }
 
 func AesEncrypt(origData, key []byte) ([]byte, error) {
