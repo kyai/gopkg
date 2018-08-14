@@ -3,7 +3,9 @@ package ip
 import (
 	"errors"
 	"io/ioutil"
+	"net"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -30,7 +32,7 @@ func (this *Url) Get() Url {
 	return urls
 }
 
-func GetInternet() (ip string, err error) {
+func Internet() (ip string, err error) {
 	ipChan := make(chan string)
 	for _, v := range urls {
 		go httpget(v, ipChan)
@@ -44,7 +46,21 @@ func GetInternet() (ip string, err error) {
 	}
 }
 
-func GetInternal() {}
+func Internal() (ip string, err error) {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return
+	}
+	for _, a := range addrs {
+		if ipnet, ok := a.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				ip = ipnet.IP.String()
+				break
+			}
+		}
+	}
+	return
+}
 
 func httpget(url string, ipChan chan string) (ip string, err error) {
 	resp, err := http.Get(url)
@@ -57,6 +73,7 @@ func httpget(url string, ipChan chan string) (ip string, err error) {
 		return
 	}
 	ip = string(data)
+	ip = strings.Replace(ip, "\n", "", -1)
 	ipChan <- ip
 	return
 }
