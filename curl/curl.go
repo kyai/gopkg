@@ -110,6 +110,12 @@ func (this *curl) request() (response Response, err error) {
 		switch this.body {
 		case TEXT:
 			payload = bytes.NewReader([]byte(this.data.(string)))
+		case FORM:
+			fdata := ""
+			for k, v := range this.data.(map[string]string) {
+				fdata += k + "=" + v + "&"
+			}
+			payload = strings.NewReader(fdata)
 		case JSON:
 			if jdata, err := json.Marshal(this.data); err != nil {
 				return nil, err
@@ -128,6 +134,11 @@ func (this *curl) request() (response Response, err error) {
 	request, err := http.NewRequest(this.method, this.url, payload)
 	if err != nil {
 		return
+	}
+
+	switch this.body {
+	case FORM:
+		request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	}
 
 	if this.header != nil {
