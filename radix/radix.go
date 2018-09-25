@@ -17,6 +17,8 @@ func Convert(num interface{}, currentRadix, targetRadix int) (result string, err
 		numStr = num.(string)
 	case int:
 		numStr = strconv.Itoa(num.(int))
+	case int64:
+		numStr = strconv.FormatInt(num.(int64), 10)
 	default:
 		return "", errors.New("No support type")
 	}
