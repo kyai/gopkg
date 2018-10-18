@@ -2,6 +2,7 @@ package curl
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"encoding/xml"
 	"errors"
@@ -147,7 +148,11 @@ func (this *curl) request() (response Response, err error) {
 		}
 	}
 
-	httpClient := http.Client{}
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+
+	httpClient := http.Client{Transport: tr}
 
 	response, err = httpClient.Do(request)
 	if err != nil {
