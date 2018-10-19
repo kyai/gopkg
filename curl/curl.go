@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 type curl struct {
@@ -21,6 +22,13 @@ type curl struct {
 	method string
 	header map[string]string
 	cookie map[string]string
+	option Option
+	client http.Client //custom client
+}
+
+type Option struct {
+	Timeout    time.Duration // request timeout
+	SkipVerify bool          // skip ssl verify
 }
 
 type Response *http.Response
@@ -38,6 +46,12 @@ const (
 // New request
 func New(method, url string) *curl {
 	return &curl{url: url, method: method}
+}
+
+// Set options
+func (this *curl) Set(option Option) *curl {
+	this.option = option
+	return this
 }
 
 // Set data and the type, default is JSON
@@ -66,6 +80,12 @@ func (this *curl) Header(header map[string]string) *curl {
 // Set cookies
 func (this *curl) Cookie(cookie map[string]string) *curl {
 	this.cookie = cookie
+	return this
+}
+
+// Set custom client
+func (this *curl) Client(client http.Client) *curl {
+	this.client = client
 	return this
 }
 
@@ -148,13 +168,17 @@ func (this *curl) request() (response Response, err error) {
 		}
 	}
 
+	// options
+	opt := this.option
+
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: opt.SkipVerify},
 	}
 
-	httpClient := http.Client{Transport: tr}
+	this.client.Transport = tr
+	this.client.Timeout = opt.Timeout
 
-	response, err = httpClient.Do(request)
+	response, err = this.client.Do(request)
 	if err != nil {
 		return
 	}
